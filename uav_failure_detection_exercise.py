@@ -36,8 +36,8 @@ Test 9: https://youtu.be/opDSC2ox-c4
 #log_file_path = 'TEST8_30-01-19.ulg'
 log_file_path = 'TEST9_08-02-19.ulg'
 
-start_seconds = 200
-end_seconds = 400
+start_seconds = 250
+end_seconds = 350
 pressure_time = []
 pressure_log = []
 acceleration_time = []
@@ -129,7 +129,7 @@ def algorithm_update(new_data):
 
             # Log control inputs (x, y, z, r axes)
             control_time.append(new_data['timestamp'])
-            control_log.append([new_data['x'], new_data['y'], new_data['z'], new_data['r']])
+            control_log.append([new_data['x'], new_data['y'], new_data['z'], new_data['r'], new_data['aux1']])
 
         # Check for discrepancy using ADRC observer
         check_for_discrepancy()
@@ -195,25 +195,39 @@ def algorithm_done():
     # plots stacked on top of each other
     plt.figure(1)
 
+    plt.title('Fail detection algorithm')
+
 
     plt.subplot(311)
     plt.plot(pressure_time, barometric_altitude_meters)
-    plt.title('Barometric height')
     plt.legend(['Barometric height'])
     # plot discrepancy time
     for t in discrepancy_time:
         plt.axvline(x=t, color='r', linestyle='--')
 
+    plt.xlim(start_seconds, end_seconds)
+    plt.grid(True)
+
 
     plt.subplot(312)
     plt.plot(control_time, control_log)
     plt.title('Control inputs')
-    plt.legend(['x', 'y', 'z', 'r'])
+    plt.legend(['x', 'y', 'z', 'r','aux1'])
+    plt.xlim(start_seconds, end_seconds)
+
+    plt.grid(True)
 
     plt.subplot(313)
     plt.plot(erro_time, error_log)
     plt.title('Error')
     plt.ylim(0, 100)
+    plt.xlim(start_seconds, end_seconds)
+
+    #horizontal line at the threshold
+    plt.axhline(y=DISCREPANCY_THRESHOLD, color='r', linestyle='--', label='Threshold')
+    plt.text(300, DISCREPANCY_THRESHOLD, 'Threshold', color='r')
+
+    plt.grid(True)
 
     plt.tight_layout()
     plt.show()
