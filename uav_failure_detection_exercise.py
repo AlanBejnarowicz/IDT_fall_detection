@@ -33,10 +33,10 @@ Test 9: https://youtu.be/opDSC2ox-c4
 '''
 
 #log_file_path = 'TEST5_30-01-19.ulg'
-#log_file_path = 'TEST8_30-01-19.ulg'
-log_file_path = 'TEST9_08-02-19.ulg'
+log_file_path = 'TEST8_30-01-19.ulg'
+#log_file_path = 'TEST9_08-02-19.ulg'
 
-start_seconds = 250
+start_seconds = 280
 end_seconds = 350
 pressure_time = []
 pressure_log = []
@@ -57,7 +57,7 @@ def algorithm_init():
 
 
 # Define thresholds for discrepancy detection
-DISCREPANCY_THRESHOLD = 40  # Set this based on observed normal operation values
+DISCREPANCY_THRESHOLD = 50  # Set this based on observed normal operation values
 
 # Lists to store data for analysis
 pressure_time = []
@@ -158,7 +158,11 @@ def check_for_discrepancy():
         disturbance_magnitude = np.linalg.norm(disturbance_estimate)
 
         erro_time.append(acceleration_time[-1])
-        er = np.linalg.norm(acc_discrepancies) + np.linalg.norm(gyro_discrepancies) + disturbance_magnitude
+        #er = np.linalg.norm(acc_discrepancies) + np.linalg.norm(gyro_discrepancies) + disturbance_magnitude
+        er = disturbance_estimate[1]**2 + disturbance_estimate[1]**2
+        #limit err to 100
+        if er > 100:
+            er = 100
         error_log.append(er)
 
         # Check if any discrepancy or disturbance magnitude exceeds the threshold
@@ -191,48 +195,38 @@ def algorithm_done():
     for i in range(1, len(barometric_altitude_meters)):
         barometric_velocity.append(alpha * (barometric_altitude_meters[i] - barometric_altitude_meters[i-1]) + (1-alpha) * barometric_velocity[-1])
 
-
     # plots stacked on top of each other
-    plt.figure(1)
+    plt.figure(1, figsize=(10, 8))
+    plt.suptitle('Fail detection algorithm')
 
-    plt.title('Fail detection algorithm')
-
-
+    # Barometric height plot
     plt.subplot(311)
     plt.plot(pressure_time, barometric_altitude_meters)
+    plt.title('Barometric height')
     plt.legend(['Barometric height'])
-    # plot discrepancy time
+    plt.xlim(start_seconds, end_seconds)
+
+    # Vertical lines for discrepancy detection
     for t in discrepancy_time:
         plt.axvline(x=t, color='r', linestyle='--')
 
-    plt.xlim(start_seconds, end_seconds)
-    plt.grid(True)
-
-
+    # Control inputs plot
     plt.subplot(312)
-    plt.plot(control_time, control_log)
+    control_log_np = np.array(control_log)
+    for i, label in enumerate(['x', 'y', 'z', 'r', 'aux1']):
+        plt.plot(control_time, control_log_np[:, i], label=label)
     plt.title('Control inputs')
-    plt.legend(['x', 'y', 'z', 'r','aux1'])
+    plt.legend()
     plt.xlim(start_seconds, end_seconds)
 
-    plt.grid(True)
-
+    # Error plot
     plt.subplot(313)
     plt.plot(erro_time, error_log)
     plt.title('Error')
-    plt.ylim(0, 100)
     plt.xlim(start_seconds, end_seconds)
 
-    #horizontal line at the threshold
-    plt.axhline(y=DISCREPANCY_THRESHOLD, color='r', linestyle='--', label='Threshold')
-    plt.text(300, DISCREPANCY_THRESHOLD, 'Threshold', color='r')
 
-    plt.grid(True)
-
-    plt.tight_layout()
-    plt.show()
-
-
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.show()
 
 #####################################################################
